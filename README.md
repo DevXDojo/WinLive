@@ -14,6 +14,8 @@
 
 [![download link](imgs/badge-en.svg)](https://apps.microsoft.com/detail/9NXZW4PLMG80)
 
+![og](imgs/og.png)
+
 ## 🛠️ Development
 
 Install the .NET 8 SDK and the Windows App SDK workload, then run:

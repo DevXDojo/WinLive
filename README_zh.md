@@ -14,6 +14,8 @@
 
 [![下载链接](imgs/badge-cn.svg)](https://apps.microsoft.com/detail/9NXZW4PLMG80)
 
+![og](imgs/og.png)
+
 ## 🛠️ 开发指南
 
 安装 .NET 8 SDK 和 Windows App SDK 工作负载，然后运行：
