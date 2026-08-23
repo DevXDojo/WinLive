@@ -1,0 +1,287 @@
+name: Release
+run-name: Release ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, for example 1.2.3 or 1.2.3-beta.1
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish Windows x64 release
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    env:
+      WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release version
+        id: version
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:INPUT_VERSION.Trim()
+          if ($version.StartsWith('v')) {
+            $version = $version.Substring(1)
+          }
+
+          $pattern = '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)(?<prerelease>-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+          if ($version -notmatch $pattern) {
+            throw "'$version' is not a supported semantic version. Use a value such as 1.2.3 or 1.2.3-beta.1."
+          }
+
+          $major = [int] $Matches.major
+          $minor = [int] $Matches.minor
+          $patch = [int] $Matches.patch
+          if ($major -gt 65535 -or $minor -gt 65535 -or $patch -gt 65535) {
+            throw 'Each numeric version component must be between 0 and 65535 for MSIX.'
+          }
+
+          $isPrerelease = -not [string]::IsNullOrEmpty($Matches.prerelease)
+          if ($isPrerelease) {
+            if ($env:GITHUB_RUN_NUMBER -gt 65534) {
+              throw 'The workflow run number is too large to encode in an MSIX pre-release version.'
+            }
+            $revision = [int] $env:GITHUB_RUN_NUMBER
+          } else {
+            # A stable build sorts after every pre-release of the same semantic version.
+            $revision = 65535
+          }
+
+          $tag = "v$version"
+          $packageVersion = "$major.$minor.$patch.$revision"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "package_version=$packageVersion" >> $env:GITHUB_OUTPUT
+          "is_prerelease=$($isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+          "VERSION=$version" >> $env:GITHUB_ENV
+          "TAG=$tag" >> $env:GITHUB_ENV
+          "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
+          "IS_PRERELEASE=$($isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_ENV
+
+      - name: Check existing tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git fetch --force --tags
+          $existingCommit = git rev-list -n 1 $env:TAG 2>$null
+          if ($LASTEXITCODE -eq 0 -and $existingCommit) {
+            if ($existingCommit.Trim() -ne $env:GITHUB_SHA) {
+              throw "Tag $env:TAG already points to $($existingCommit.Trim()), not $env:GITHUB_SHA."
+            }
+            Write-Host "Tag $env:TAG already points to this commit; the workflow can safely resume."
+          } else {
+            Write-Host "Tag $env:TAG is available."
+          }
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore WinLive.sln -p:Platform=x64
+
+      - name: Run tests
+        run: dotnet test WinLive.sln --configuration Release -p:Platform=x64 --no-restore
+
+      - name: Load release certificate
+        id: certificate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64)) {
+            throw 'Repository secret WINDOWS_CERTIFICATE_BASE64 is required.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
+            throw 'Repository secret WINDOWS_CERTIFICATE_PASSWORD is required.'
+          }
+
+          $certificateDir = Join-Path $env:RUNNER_TEMP 'winlive-release-signing'
+          $pfxPath = Join-Path $certificateDir 'WinLive-Release.pfx'
+          $cerPath = Join-Path $certificateDir 'WinLive-Release.cer'
+          New-Item -ItemType Directory -Force -Path $certificateDir | Out-Null
+
+          try {
+            [IO.File]::WriteAllBytes(
+              $pfxPath,
+              [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64)
+            )
+          } catch {
+            throw 'WINDOWS_CERTIFICATE_BASE64 is not a valid base64-encoded PFX file.'
+          }
+
+          $securePassword = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $certificate = Get-PfxCertificate -FilePath $pfxPath -Password $securePassword
+          if (-not $certificate.HasPrivateKey) {
+            throw 'The release certificate PFX does not contain a private key.'
+          }
+
+          Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
+          Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\CurrentUser\TrustedPeople' | Out-Null
+
+          "pfx_path=$pfxPath" >> $env:GITHUB_OUTPUT
+          "publisher=$($certificate.Subject)" >> $env:GITHUB_OUTPUT
+          "thumbprint=$($certificate.Thumbprint)" >> $env:GITHUB_OUTPUT
+
+      - name: Set release package identity
+        shell: pwsh
+        env:
+          CERTIFICATE_PUBLISHER: ${{ steps.certificate.outputs.publisher }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifestPath = Join-Path $env:GITHUB_WORKSPACE 'src\WinLive\Package.appxmanifest'
+          [xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
+          $manifest.Package.Identity.Publisher = $env:CERTIFICATE_PUBLISHER
+          $manifest.Package.Identity.Version = $env:PACKAGE_VERSION
+          $manifest.Save($manifestPath)
+
+      - name: Build MSIX package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $packageDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\release-msix\'
+
+          dotnet build 'src\WinLive\WinLive.csproj' `
+            --configuration Release `
+            --no-restore `
+            "-p:Version=$env:VERSION" `
+            "-p:AssemblyVersion=$env:PACKAGE_VERSION" `
+            "-p:FileVersion=$env:PACKAGE_VERSION" `
+            -p:Platform=x64 `
+            -p:GenerateAppxPackageOnBuild=true `
+            -p:AppxPackageSigningEnabled=false `
+            "-p:AppxPackageDir=$packageDir"
+
+      - name: Sign and verify release package
+        id: package
+        shell: pwsh
+        env:
+          PFX_PATH: ${{ steps.certificate.outputs.pfx_path }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $msixFiles = @(Get-ChildItem 'artifacts\release-msix' -Recurse -Filter '*.msix')
+          if ($msixFiles.Count -ne 1) {
+            throw "Expected exactly one MSIX package, found $($msixFiles.Count)."
+          }
+
+          $signTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" `
+            -Recurse -Filter 'signtool.exe' |
+            Where-Object FullName -Match '\\x64\\signtool\.exe$' |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signTool) {
+            throw 'SignTool was not found on the Windows runner.'
+          }
+
+          & $signTool sign `
+            /fd SHA256 `
+            /f $env:PFX_PATH `
+            /p $env:WINDOWS_CERTIFICATE_PASSWORD `
+            /tr 'http://timestamp.digicert.com' `
+            /td SHA256 `
+            $msixFiles[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX signing failed.' }
+
+          & $signTool verify /pa /all $msixFiles[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX signature verification failed.' }
+
+          $outputDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\release'
+          New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+          $fileName = "WinLive-$env:VERSION-windows-x64.msix"
+          $outputPath = Join-Path $outputDir $fileName
+          Copy-Item -LiteralPath $msixFiles[0].FullName -Destination $outputPath
+
+          $hash = (Get-FileHash -LiteralPath $outputPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $hashPath = "$outputPath.sha256"
+          "$hash *$fileName" | Set-Content -LiteralPath $hashPath -Encoding ascii
+          "asset_path=$outputPath" >> $env:GITHUB_OUTPUT
+          "hash_path=$hashPath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload release build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinLive-${{ steps.version.outputs.version }}-windows-x64
+          path: artifacts/release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Create Git tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $existingCommit = git rev-list -n 1 $env:TAG 2>$null
+          if ($LASTEXITCODE -eq 0 -and $existingCommit) {
+            Write-Host "Tag $env:TAG already exists at this commit."
+            exit 0
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag --annotate $env:TAG $env:GITHUB_SHA --message "WinLive $env:TAG"
+          git push origin "refs/tags/$env:TAG"
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          HASH_PATH: ${{ steps.package.outputs.hash_path }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:TAG $env:ASSET_PATH $env:HASH_PATH `
+              --repo $env:GITHUB_REPOSITORY `
+              --clobber
+            if ($LASTEXITCODE -ne 0) { throw 'Updating the existing release assets failed.' }
+            exit 0
+          }
+
+          $arguments = @(
+            'release', 'create', $env:TAG,
+            $env:ASSET_PATH, $env:HASH_PATH,
+            '--repo', $env:GITHUB_REPOSITORY,
+            '--verify-tag',
+            '--title', "WinLive $env:TAG",
+            '--generate-notes'
+          )
+          if ($env:IS_PRERELEASE -eq 'true') {
+            $arguments += '--prerelease'
+          }
+
+          & gh @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'Creating the GitHub Release failed.' }
+
+      - name: Remove release certificate
+        if: always() && steps.certificate.outcome == 'success'
+        shell: pwsh
+        env:
+          CERTIFICATE_THUMBPRINT: ${{ steps.certificate.outputs.thumbprint }}
+          PFX_PATH: ${{ steps.certificate.outputs.pfx_path }}
+        run: |
+          Remove-Item "Cert:\CurrentUser\TrustedPeople\$env:CERTIFICATE_THUMBPRINT" -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath $env:PFX_PATH -Force -ErrorAction SilentlyContinue

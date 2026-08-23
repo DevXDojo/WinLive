@@ -1,0 +1,661 @@
+﻿<Window x:Class="WinLive.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="using:Microsoft.UI.Xaml.Controls">
+  <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" RowDefinitions="42,*">
+    <Grid.Resources>
+      <Style x:Key="CaptionButton" TargetType="Button">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="42" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+      </Style>
+      <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+      </Style>
+      <Style x:Key="SegmentButton" TargetType="ToggleButton">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinWidth" Value="34" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="0" />
+      </Style>
+      <Style x:Key="ViewerButton" TargetType="Button">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+      </Style>
+      <Style x:Key="ViewerMenuButton" TargetType="Button">
+        <Setter Property="Height" Value="38" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+      </Style>
+      <Style x:Key="SettingsNavButton" TargetType="ToggleButton">
+        <Setter Property="Height" Value="42" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="5" />
+      </Style>
+    </Grid.Resources>
+    <Grid x:Name="CustomTitleBar" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" ColumnDefinitions="Auto,*,Auto">
+      <Grid x:Name="LibraryTitleBarContent" Margin="12,0" VerticalAlignment="Center">
+        <Image Source="ms-appx:///Assets/icon-large.png" Width="108" Height="34" Stretch="Uniform" HorizontalAlignment="Left" />
+      </Grid>
+      <Grid x:Name="ViewerTitleBarContent" Visibility="Collapsed" Margin="6,0" ColumnDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="2" VerticalAlignment="Center">
+        <Button x:Name="BackButton" Style="{StaticResource IconButton}" Background="Transparent" BorderThickness="0" Click="CloseViewer_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+        </Button>
+        <TextBlock x:Name="ViewerTitle" Grid.Column="1" MaxWidth="460" Margin="8,0,12,0" TextTrimming="CharacterEllipsis" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button x:Name="FavoriteButton" Grid.Column="2" Style="{StaticResource IconButton}" Background="Transparent" BorderThickness="0" FontSize="15" Click="Favorite_Click" Content="♡" />
+        <Button x:Name="InfoButton" Grid.Column="3" Style="{StaticResource IconButton}" Background="Transparent" BorderThickness="0" Click="Info_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+        </Button>
+      </Grid>
+      <Grid x:Name="TitleBarDragRegion" Grid.Column="1" Background="Transparent" />
+      <Border x:Name="ViewerTopTools" Grid.Column="1" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Background="Transparent" Padding="0">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button x:Name="PlayPauseButton" Style="{StaticResource ViewerButton}" Click="PlayPause_Click">
+            <FontIcon Glyph="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button Style="{StaticResource ViewerButton}" Click="ZoomOut_Click">
+            <FontIcon Glyph="&#xE71F;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button x:Name="FitButton" Style="{StaticResource ViewerButton}" Click="Fit_Click">
+            <FontIcon Glyph="&#xE9A6;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <TextBlock x:Name="ZoomText" Text="100%" Foreground="#AFFFFFFF" FontSize="9" MinWidth="38" TextAlignment="Center" VerticalAlignment="Center" />
+          <Button Style="{StaticResource ViewerButton}" Click="ZoomIn_Click">
+            <FontIcon Glyph="&#xE8A3;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button Style="{StaticResource ViewerButton}" Click="RotateLeft_Click">
+            <FontIcon Glyph="&#xE7AD;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button x:Name="MuteButton" Style="{StaticResource ViewerButton}" Click="Mute_Click">
+            <FontIcon Glyph="&#xE74F;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button x:Name="ViewerMoreButton" Style="{StaticResource ViewerButton}">
+            <FontIcon Glyph="&#xE712;" FontFamily="Segoe Fluent Icons" FontSize="13" />
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedRight">
+                <StackPanel Width="270" Spacing="8">
+                  <TextBlock Text="ORGANIZE" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="10,3" />
+                  <Button x:Name="AddToAlbumButton" Style="{StaticResource ViewerMenuButton}" Content="Add to album" Click="AddToAlbum_Click" />
+                  <Button x:Name="EditTagsButton" Style="{StaticResource ViewerMenuButton}" Content="Edit tags and note" Click="EditAnnotation_Click" />
+                  <TextBlock Text="VIEW" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="10,3" />
+                  <Button x:Name="SlideshowButton" Style="{StaticResource ViewerMenuButton}" Content="Slideshow" Click="Slideshow_Click" />
+                  <ComboBox x:Name="SlideshowIntervalBox" Header="Change every" SelectedIndex="1" SelectionChanged="SlideshowInterval_Changed">
+                    <ComboBoxItem x:Name="Seconds2Item" Content="2 seconds" Tag="2" />
+                    <ComboBoxItem x:Name="Seconds3Item" Content="3 seconds" Tag="3" />
+                    <ComboBoxItem x:Name="Seconds5Item" Content="5 seconds" Tag="5" />
+                    <ComboBoxItem x:Name="Seconds10Item" Content="10 seconds" Tag="10" />
+                  </ComboBox>
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <ToggleButton x:Name="ShuffleButton" Content="Shuffle" />
+                    <ToggleButton x:Name="LoopButton" Content="Loop" IsChecked="True" />
+                  </StackPanel>
+                  <TextBlock x:Name="SlideshowOptionsText" Visibility="Collapsed" />
+                  <TextBlock Text="FILE" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="10,3" />
+                  <Button x:Name="CopyPathButton" Style="{StaticResource ViewerMenuButton}" Content="Copy path" Click="CopyPath_Click" />
+                  <Button x:Name="RevealButton" Style="{StaticResource ViewerMenuButton}" Content="Show in folder" Click="RevealInFolder_Click" />
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+      </Border>
+      <StackPanel Grid.Column="2" Orientation="Horizontal">
+        <Button Style="{StaticResource CaptionButton}" Click="TitleBarMinimize_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="10" />
+        </Button>
+        <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="TitleBarMaximize_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="10" />
+        </Button>
+        <Button x:Name="CloseWindowButton" Style="{StaticResource CaptionButton}" Click="TitleBarClose_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="10" />
+        </Button>
+      </StackPanel>
+    </Grid>
+    <Grid x:Name="LibraryPanel" Grid.Row="1" RowDefinitions="58,44,*,28">
+      <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,0">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="18">
+          <StackPanel VerticalAlignment="Center" Spacing="1">
+            <TextBlock x:Name="LibraryTitleText" Text="All media" FontSize="19" FontWeight="SemiBold" />
+            <TextBlock x:Name="FolderNameText" Text="No folder selected" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxWidth="300" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <TextBox x:Name="SearchBox" Grid.Column="1" Width="390" Height="34" HorizontalAlignment="Center" VerticalAlignment="Center" PlaceholderText="Search filenames, tags and notes" TextChanged="SearchBox_TextChanged" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button x:Name="OpenFolderButton" Height="34" Padding="11,0" Click="OpenFolder_Click">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+                <TextBlock x:Name="OpenFolderText" Text="Open folder" />
+              </StackPanel>
+            </Button>
+            <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" Click="OpenSettings_Click">
+              <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid Grid.Row="1" Padding="16,5" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="1">
+          <ToggleButton x:Name="AllNavButton" Style="{StaticResource SegmentButton}" Click="AllFilter_Click" IsChecked="True">
+            <TextBlock x:Name="AllNavText" Text="All" />
+          </ToggleButton>
+          <ToggleButton x:Name="PhotoNavButton" Style="{StaticResource SegmentButton}" Click="PhotoFilter_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </ToggleButton>
+          <ToggleButton x:Name="LiveNavButton" Style="{StaticResource SegmentButton}" Click="LiveFilter_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </ToggleButton>
+          <ToggleButton x:Name="VideoNavButton" Style="{StaticResource SegmentButton}" Click="VideoFilter_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </ToggleButton>
+        </StackPanel>
+        <Border Grid.Column="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" Padding="8,0,0,0">
+          <ToggleButton x:Name="FavoritesFilterButton" Style="{StaticResource SegmentButton}" Checked="FavoritesFilter_Changed" Unchecked="FavoritesFilter_Changed">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </ToggleButton>
+        </Border>
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="5">
+          <ComboBox x:Name="SortBox" Width="132" Height="32" SelectedIndex="0" SelectionChanged="OrganizationFilter_Changed">
+            <ComboBoxItem x:Name="SortNewestItem" Content="Newest first" />
+            <ComboBoxItem x:Name="SortOldestItem" Content="Oldest first" />
+            <ComboBoxItem x:Name="SortNameAscendingItem" Content="Name A–Z" />
+            <ComboBoxItem x:Name="SortNameDescendingItem" Content="Name Z–A" />
+          </ComboBox>
+          <Button x:Name="FilterButton" Height="32" Padding="9,0" Click="ToggleFilterPanel_Click">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="12" />
+              <TextBlock x:Name="FilterButtonText" Text="Filter" />
+            </StackPanel>
+          </Button>
+          <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" Padding="5,0,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="1">
+              <ToggleButton x:Name="GroupNoneItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="GroupNone_Click">
+                <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="12" />
+              </ToggleButton>
+              <ToggleButton x:Name="GroupDayItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="GroupDay_Click">
+                <TextBlock Text="D" FontSize="10" />
+              </ToggleButton>
+              <ToggleButton x:Name="GroupMonthItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="GroupMonth_Click" IsChecked="True">
+                <TextBlock Text="M" FontSize="10" FontWeight="SemiBold" />
+              </ToggleButton>
+              <ToggleButton x:Name="GroupYearItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="GroupYear_Click">
+                <TextBlock Text="Y" FontSize="10" />
+              </ToggleButton>
+            </StackPanel>
+          </Border>
+          <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" Padding="5,0,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="1">
+              <ToggleButton x:Name="DensitySmallItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="DensityCompact_Click">
+                <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="10" />
+              </ToggleButton>
+              <ToggleButton x:Name="DensityMediumItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="DensityComfortable_Click" IsChecked="True">
+                <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+              </ToggleButton>
+              <ToggleButton x:Name="DensityLargeItem" Style="{StaticResource SegmentButton}" Padding="8,0" Click="DensityLarge_Click">
+                <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="16" />
+              </ToggleButton>
+            </StackPanel>
+          </Border>
+          <Button x:Name="SelectionModeButton" Style="{StaticResource IconButton}" Click="SelectionMode_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+          <Button x:Name="InsightsButton" Style="{StaticResource IconButton}" Click="Insights_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+          </Button>
+        </StackPanel>
+      </Grid>
+      <Grid Grid.Row="2" Padding="10,0" ColumnDefinitions="*,Auto">
+        <ListView x:Name="TimelineGrid" ItemsSource="{Binding TimelineRows}" SelectionMode="None" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.IsDeferredScrollingEnabled="True" SizeChanged="TimelineGrid_SizeChanged" ContainerContentChanging="TimelineGrid_ContainerContentChanging" PointerWheelChanged="TimelineGrid_PointerWheelChanged">
+          <ListView.ItemsPanel>
+            <ItemsPanelTemplate>
+              <ItemsStackPanel Orientation="Vertical" />
+            </ItemsPanelTemplate>
+          </ListView.ItemsPanel>
+          <ListView.ItemContainerStyle>
+            <Style TargetType="ListViewItem">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              <Setter Property="Padding" Value="0" />
+              <Setter Property="Margin" Value="0" />
+              <Setter Property="Background" Value="Transparent" />
+            </Style>
+          </ListView.ItemContainerStyle>
+          <ListView.ItemTemplate>
+            <DataTemplate>
+              <Grid Height="{Binding Height}">
+                <Grid Visibility="{Binding HeaderVisibility}" ColumnDefinitions="Auto,*" ColumnSpacing="10" Padding="3,0">
+                  <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" />
+                  <Border Grid.Column="1" Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" VerticalAlignment="Center" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Tiles}" Visibility="{Binding TilesVisibility}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="3" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Tag="{Binding}" Click="MediaTile_Click" RightTapped="MediaTile_RightTapped" PointerEntered="MediaTile_PointerEntered" PointerExited="MediaTile_PointerExited" PointerPressed="MediaTile_PointerPressed" PointerReleased="MediaTile_PointerReleased" PointerCanceled="MediaTile_PointerReleased" PointerCaptureLost="MediaTile_LostPointerCapture" Width="{Binding TileWidth}" Height="{Binding TileHeight}" Padding="0" Background="{ThemeResource ControlFillColorSecondaryBrush}" BorderThickness="0" CornerRadius="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                        <Grid>
+                          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                          <Border x:Name="TileCaption" Opacity="0" VerticalAlignment="Bottom" Height="30" Padding="8,0" Background="#B20A0B0D">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                              <TextBlock Text="{Binding Name}" Foreground="White" FontSize="10" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" Text="{Binding Extension}" Foreground="#BFFFFFFF" FontSize="8" VerticalAlignment="Center" />
+                            </Grid>
+                          </Border>
+                          <Border Visibility="{Binding SelectionIndicatorVisibility}" Background="{ThemeResource AccentFillColorDefaultBrush}" BorderBrush="White" BorderThickness="2" CornerRadius="9" Width="24" Height="24" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6">
+                            <TextBlock Text="{Binding SelectionMark}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="7" Spacing="6" Opacity="0.68">
+                            <TextBlock Visibility="{Binding FavoriteVisibility}" Text="♥" Foreground="White" FontSize="10" />
+                            <TextBlock Visibility="{Binding BadgeVisibility}" Text="▶" Foreground="White" FontSize="9" />
+                            <TextBlock Visibility="{Binding HdrBadgeVisibility}" Text="◐" Foreground="White" FontSize="9" />
+                          </StackPanel>
+                        </Grid>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+            </DataTemplate>
+          </ListView.ItemTemplate>
+        </ListView>
+        <ListView x:Name="TimeNavigation" Grid.Column="1" ItemsSource="{Binding NavigationGroups}" Width="94" Margin="8,6,0,6" Visibility="Collapsed" IsItemClickEnabled="True" ItemClick="TimeNavigation_ItemClick" SelectionMode="None" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListView.ItemContainerStyle>
+            <Style TargetType="ListViewItem">
+              <Setter Property="MinHeight" Value="30" />
+              <Setter Property="Padding" Value="9,0" />
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              <Setter Property="CornerRadius" Value="3" />
+            </Style>
+          </ListView.ItemContainerStyle>
+          <ListView.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Title}" FontSize="10" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            </DataTemplate>
+          </ListView.ItemTemplate>
+        </ListView>
+        <StackPanel x:Name="EmptyState" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9">
+          <FontIcon x:Name="EmptyStateIcon" Glyph="" FontFamily="Segoe Fluent Icons" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="30" />
+          <TextBlock x:Name="EmptyStateTitle" Text="No library open" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock x:Name="EmptyStateDescription" Text="Choose a folder to start browsing." Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+            <Button x:Name="EmptyStatePrimaryButton" Content="Choose a folder" Click="OpenFolder_Click" Style="{StaticResource AccentButtonStyle}" />
+            <Button x:Name="EmptyStateClearButton" Content="Clear filters" Click="ClearFilters_Click" Visibility="Collapsed" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+      <Grid Grid.Row="3" Padding="16,0">
+        <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+          <ProgressRing x:Name="ScanProgress" Width="12" Height="12" IsActive="False" Visibility="Collapsed" />
+          <TextBlock x:Name="StatusText" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Grid>
+    </Grid>
+    <Grid x:Name="FilterOverlay" Grid.Row="1" Visibility="Collapsed" Canvas.ZIndex="30" ColumnDefinitions="*,380">
+      <Button Background="#52000000" BorderThickness="0" CornerRadius="0" Click="CloseFilterPanel_Click" />
+      <Border x:Name="FilterPanel" Grid.Column="1" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" Padding="22,18">
+        <Grid RowDefinitions="Auto,*">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+            <StackPanel>
+              <TextBlock x:Name="FilterTitleText" Text="Filters" FontSize="21" FontWeight="SemiBold" />
+              <TextBlock Text="Narrow this view" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+            <Button x:Name="ClearFiltersButton" Grid.Column="1" Content="Clear" Click="ClearFilters_Click" />
+            <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="CloseFilterPanel_Click">
+              <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="11" />
+            </Button>
+          </Grid>
+          <ScrollViewer Grid.Row="1" Margin="0,20,0,0">
+            <StackPanel Spacing="16">
+              <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" Padding="14">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="Collections" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                    <ComboBox x:Name="AlbumFilterBox" PlaceholderText="All albums" SelectionChanged="AlbumFilterBox_SelectionChanged" />
+                    <Button x:Name="CreateAlbumButton" Grid.Column="1" Content="+" Click="CreateAlbum_Click" />
+                    <Button x:Name="DeleteAlbumButton" Grid.Column="2" Content="−" Click="DeleteAlbum_Click" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                    <ComboBox x:Name="SmartViewBox" PlaceholderText="Saved views" SelectionChanged="SmartViewBox_SelectionChanged" />
+                    <Button x:Name="SaveViewButton" Grid.Column="1" Content="+" Click="SaveSmartView_Click" />
+                    <Button x:Name="DeleteViewButton" Grid.Column="2" Content="−" Click="DeleteSmartView_Click" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+              <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" Padding="14">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="Date" FontWeight="SemiBold" />
+                  <ComboBox x:Name="DateFilterBox" SelectedIndex="0" SelectionChanged="SecondaryFilter_Changed">
+                    <ComboBoxItem x:Name="DateAnyItem" Content="Any date" Tag="0" />
+                    <ComboBoxItem x:Name="Date7Item" Content="Last 7 days" Tag="7" />
+                    <ComboBoxItem x:Name="Date30Item" Content="Last 30 days" Tag="30" />
+                    <ComboBoxItem x:Name="Date365Item" Content="Last year" Tag="365" />
+                  </ComboBox>
+                </StackPanel>
+              </Border>
+              <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" Padding="14">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="Metadata" FontWeight="SemiBold" />
+                  <ComboBox x:Name="TagFilterBox" PlaceholderText="Any tag" SelectionChanged="SecondaryFilter_Changed" />
+                  <ComboBox x:Name="ExtensionFilterBox" PlaceholderText="Any format" SelectionChanged="SecondaryFilter_Changed" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
+    <Grid x:Name="SettingsOverlay" Grid.Row="1" Visibility="Collapsed" Canvas.ZIndex="32" Background="#66000000">
+      <Border Width="800" Height="550" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
+        <Grid RowDefinitions="64,*">
+          <Grid Padding="20,0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Image Source="ms-appx:///Assets/icon.png" Width="30" Height="30" Stretch="Uniform" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+              <TextBlock x:Name="SettingsTitleText" Text="Settings" FontSize="20" FontWeight="SemiBold" />
+              <TextBlock x:Name="SettingsSubtitleText" Text="WinLive preferences" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+            <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="CloseSettings_Click">
+              <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="11" />
+            </Button>
+          </Grid>
+          <Grid Grid.Row="1" ColumnDefinitions="190,*">
+            <Border Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0" Padding="12,18">
+              <StackPanel Spacing="4">
+                <TextBlock x:Name="SettingsPreferencesText" Text="PREFERENCES" Margin="10,0,0,8" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <ToggleButton x:Name="SettingsGeneralButton" Style="{StaticResource SettingsNavButton}" IsChecked="True" Click="SettingsGeneral_Click">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+                    <TextBlock x:Name="SettingsGeneralText" Text="General" />
+                  </StackPanel>
+                </ToggleButton>
+                <ToggleButton x:Name="SettingsKeyboardButton" Style="{StaticResource SettingsNavButton}" Click="SettingsKeyboard_Click">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+                    <TextBlock x:Name="SettingsKeyboardText" Text="Keyboard" />
+                  </StackPanel>
+                </ToggleButton>
+                <ToggleButton x:Name="SettingsAboutButton" Style="{StaticResource SettingsNavButton}" Click="SettingsAbout_Click">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+                    <TextBlock x:Name="SettingsAboutText" Text="About" />
+                  </StackPanel>
+                </ToggleButton>
+              </StackPanel>
+            </Border>
+            <Grid Grid.Column="1" Padding="28,22">
+              <ScrollViewer x:Name="SettingsGeneralPanel">
+                <StackPanel Spacing="16">
+                  <StackPanel Spacing="3">
+                    <TextBlock x:Name="SettingsAppearanceTitleText" Text="Appearance and language" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock x:Name="SettingsApplyImmediatelyText" Text="Changes apply immediately." Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="11" />
+                  </StackPanel>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                      <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <TextBlock x:Name="SettingsLanguageText" Text="Language" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SettingsLanguageDescriptionText" Text="Language used throughout WinLive" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                      </StackPanel>
+                      <ComboBox x:Name="LanguageBox" Grid.Column="1" Width="210" SelectionChanged="LanguageBox_SelectionChanged">
+                        <ComboBoxItem x:Name="LanguageSystemItem" Content="Follow system" Tag="System" />
+                        <ComboBoxItem x:Name="LanguageEnglishItem" Content="English" Tag="English" />
+                        <ComboBoxItem x:Name="LanguageChineseItem" Content="简体中文" Tag="SimplifiedChinese" />
+                      </ComboBox>
+                    </Grid>
+                  </Border>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                      <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <TextBlock x:Name="SettingsThemeText" Text="Theme" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SettingsThemeDescriptionText" Text="Light, dark, or match Windows" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                      </StackPanel>
+                      <ComboBox x:Name="ThemeBox" Grid.Column="1" Width="210" SelectionChanged="ThemeBox_SelectionChanged">
+                        <ComboBoxItem x:Name="ThemeSystemItem" Content="Follow system" Tag="System" />
+                        <ComboBoxItem x:Name="ThemeLightItem" Content="Light" Tag="Light" />
+                        <ComboBoxItem x:Name="ThemeDarkItem" Content="Dark" Tag="Dark" />
+                      </ComboBox>
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+              <ScrollViewer x:Name="SettingsKeyboardPanel" Visibility="Collapsed">
+                <StackPanel Spacing="16">
+                  <StackPanel Spacing="3">
+                    <TextBlock x:Name="SettingsShortcutTitleText" Text="Keyboard shortcuts" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock x:Name="SettingsShortcutDescriptionText" Text="Fast access to common library and viewer actions." Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="11" />
+                  </StackPanel>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="16">
+                      <TextBlock x:Name="SettingsOpenFolderShortcutText" Text="Open folder" /><TextBlock Grid.Column="1" Text="Ctrl + O" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsSearchShortcutText" Grid.Row="1" Text="Search" /><TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl + F" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsThumbnailShortcutText" Grid.Row="2" Text="Change thumbnail size" /><TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl + Wheel" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsShortcutReferenceText" Grid.Row="3" Text="Shortcut reference" /><TextBlock Grid.Row="3" Grid.Column="1" Text="F1" FontFamily="Consolas" />
+                    </Grid>
+                  </Border>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="16">
+                      <TextBlock x:Name="SettingsPreviousNextText" Text="Previous / next" /><TextBlock Grid.Column="1" Text="←  →" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsPlayPauseText" Grid.Row="1" Text="Play / pause" /><TextBlock Grid.Row="1" Grid.Column="1" Text="Space" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsFavoriteText" Grid.Row="2" Text="Favorite" /><TextBlock Grid.Row="2" Grid.Column="1" Text="F" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsDetailsText" Grid.Row="3" Text="Details" /><TextBlock Grid.Row="3" Grid.Column="1" Text="I" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsZoomFitText" Grid.Row="4" Text="Zoom / fit" /><TextBlock Grid.Row="4" Grid.Column="1" Text="+  −  0" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsFullscreenText" Grid.Row="5" Text="Full screen" /><TextBlock Grid.Row="5" Grid.Column="1" Text="F11" FontFamily="Consolas" />
+                      <TextBlock x:Name="SettingsBackText" Grid.Row="6" Text="Back" /><TextBlock Grid.Row="6" Grid.Column="1" Text="Esc" FontFamily="Consolas" />
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+              <ScrollViewer x:Name="SettingsAboutPanel" Visibility="Collapsed">
+                <StackPanel Spacing="18">
+                  <Image Source="ms-appx:///Assets/icon-large.png" Width="210" Height="62" Stretch="Uniform" HorizontalAlignment="Left" />
+                  <StackPanel Spacing="4">
+                    <TextBlock x:Name="AboutDescriptionText" Text="A fast, local-first library for Live Photos and everyday images." TextWrapping="Wrap" FontSize="14" MaxWidth="470" />
+                    <TextBlock x:Name="AboutVersionText" Text="Version 1.0.0" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="11" />
+                  </StackPanel>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                      <Border Width="36" Height="36" CornerRadius="18" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
+                        <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock x:Name="AboutLocalFirstText" Text="Local-first" FontWeight="SemiBold" />
+                        <TextBlock x:Name="AboutLocalFirstDescriptionText" Text="Your library, favorites, albums, and notes stay on this device." TextWrapping="Wrap" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                  <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                      <StackPanel Spacing="3">
+                        <TextBlock x:Name="AboutGitHubText" Text="Open source" FontWeight="SemiBold" />
+                        <TextBlock x:Name="AboutGitHubDescriptionText" Text="View the source, report issues, or contribute on GitHub." TextWrapping="Wrap" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                      </StackPanel>
+                      <HyperlinkButton Grid.Column="1" NavigateUri="https://github.com/DevXDojo/WinLive" Padding="12,7">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" />
+                          <TextBlock x:Name="AboutGitHubButtonText" Text="GitHub" />
+                        </StackPanel>
+                      </HyperlinkButton>
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+    <Border x:Name="BatchBar" Grid.Row="1" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,38" Background="#F21F2025" CornerRadius="6" Padding="7" Canvas.ZIndex="12">
+      <StackPanel Orientation="Horizontal" Spacing="5">
+        <TextBlock x:Name="SelectionCountText" Text="0 selected" Foreground="White" VerticalAlignment="Center" Margin="9,0" />
+        <Button x:Name="BatchFavoriteButton" Content="Favorite" Click="BatchFavorite_Click" />
+        <Button x:Name="BatchAlbumButton" Content="Add to album" Click="BatchAlbum_Click" />
+        <Button x:Name="ExportButton" Content="Export copies" Click="ExportSelected_Click" />
+        <Button x:Name="SelectVisibleButton" Content="Select visible" Click="SelectAllVisible_Click" />
+        <Button x:Name="DoneButton" Content="Done" Click="SelectionMode_Click" Style="{StaticResource AccentButtonStyle}" />
+      </StackPanel>
+    </Border>
+    <Border x:Name="InsightsPanel" Grid.Row="1" Visibility="Collapsed" Width="430" HorizontalAlignment="Right" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" Canvas.ZIndex="15">
+      <Grid RowDefinitions="74,*">
+        <Grid Padding="22,0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+          <Border Width="36" Height="36" CornerRadius="6" Background="{ThemeResource AccentFillColorSecondaryBrush}" VerticalAlignment="Center">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+            <TextBlock x:Name="InsightsTitleText" Text="Library insights" FontSize="19" FontWeight="SemiBold" />
+            <TextBlock x:Name="InsightsSubtitleText" Text="A clear snapshot of this library" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+          </StackPanel>
+          <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="CloseInsights_Click">
+            <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="12" />
+          </Button>
+        </Grid>
+        <ScrollViewer Grid.Row="1" Padding="22,18,22,24">
+          <StackPanel Spacing="18">
+            <TextBlock x:Name="InsightOverviewLabel" Text="OVERVIEW" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Grid ColumnDefinitions="1.35*,*,*" ColumnSpacing="8">
+              <Border Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="7" Padding="15,13">
+                <StackPanel Spacing="3">
+                  <TextBlock x:Name="InsightTotalLabel" Text="Items" Foreground="White" Opacity="0.75" FontSize="10" />
+                  <TextBlock x:Name="InsightTotalText" Foreground="White" FontSize="28" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="13">
+                <StackPanel Spacing="4">
+                  <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" HorizontalAlignment="Left" />
+                  <TextBlock x:Name="InsightFavoritesText" FontSize="21" FontWeight="SemiBold" />
+                  <TextBlock x:Name="InsightFavoritesLabel" Text="Favorites" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="9" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="13">
+                <StackPanel Spacing="4">
+                  <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="13" HorizontalAlignment="Left" />
+                  <TextBlock x:Name="InsightAlbumCountText" FontSize="21" FontWeight="SemiBold" />
+                  <TextBlock x:Name="InsightAlbumsLabel" Text="Albums" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="9" />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <StackPanel Spacing="11">
+              <TextBlock x:Name="InsightBreakdownLabel" Text="MEDIA BREAKDOWN" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="9">
+                <StackPanel Spacing="4">
+                  <TextBlock x:Name="InsightPhotosLabel" Text="Photos" FontSize="11" />
+                  <ProgressBar x:Name="InsightPhotosBar" Height="3" />
+                </StackPanel>
+                <TextBlock x:Name="InsightPhotosText" Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <StackPanel Grid.Row="1" Spacing="4">
+                  <TextBlock x:Name="InsightLiveLabel" Text="Live Photos" FontSize="11" />
+                  <ProgressBar x:Name="InsightLiveBar" Height="3" />
+                </StackPanel>
+                <TextBlock x:Name="InsightLiveText" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <StackPanel Grid.Row="2" Spacing="4">
+                  <TextBlock x:Name="InsightVideosLabel" Text="Videos" FontSize="11" />
+                  <ProgressBar x:Name="InsightVideosBar" Height="3" />
+                </StackPanel>
+                <TextBlock x:Name="InsightVideosText" Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <StackPanel Grid.Row="3" Spacing="4">
+                  <TextBlock x:Name="InsightHdrLabel" Text="HDR" FontSize="11" />
+                  <ProgressBar x:Name="InsightHdrBar" Height="3" />
+                </StackPanel>
+                <TextBlock x:Name="InsightHdrText" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" />
+              </Grid>
+            </StackPanel>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="14">
+                <StackPanel Spacing="5">
+                  <TextBlock x:Name="InsightDateLabel" Text="DATE RANGE" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                  <TextBlock x:Name="InsightDateText" TextWrapping="Wrap" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="14">
+                <StackPanel Spacing="5">
+                  <TextBlock x:Name="InsightStorageLabel" Text="STORAGE" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                  <TextBlock x:Name="InsightStorageText" FontSize="17" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+            </Grid>
+            <StackPanel Spacing="8">
+              <TextBlock x:Name="InsightAlbumListLabel" Text="ALBUMS" FontSize="9" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="7" Padding="14">
+                <TextBlock x:Name="InsightAlbumsText" TextWrapping="Wrap" LineHeight="21" />
+              </Border>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+    <Grid x:Name="ViewerPanel" Grid.Row="1" Visibility="Collapsed" Background="#090A0C" RowDefinitions="*,58" Canvas.ZIndex="18">
+      <Grid x:Name="ViewerCanvas" IsTabStop="True" SizeChanged="ViewerCanvas_SizeChanged" RightTapped="ViewerCanvas_RightTapped" PointerPressed="ViewerCanvas_PointerPressed" PointerMoved="ViewerCanvas_PointerMoved" PointerReleased="ViewerCanvas_PointerReleased" PointerCanceled="ViewerCanvas_PointerReleased" PointerWheelChanged="ViewerCanvas_PointerWheelChanged">
+        <Grid x:Name="ViewerMediaLayer" RenderTransformOrigin="0.5,0.5">
+          <Image x:Name="ViewerImage" Stretch="Uniform" Margin="8" />
+          <Image x:Name="ViewerPreloadImage" Opacity="0.001" Width="1" Height="1" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" />
+          <controls:MediaPlayerElement x:Name="ViewerPlayer" AreTransportControlsEnabled="False" Visibility="Collapsed" AutoPlay="False" Margin="8" />
+        </Grid>
+        <Button x:Name="PreviousButton" Width="48" Height="78" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0" Background="#26000000" Foreground="White" BorderThickness="0" CornerRadius="4" Click="Previous_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="22" />
+        </Button>
+        <Button x:Name="NextButton" Width="48" Height="78" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Background="#26000000" Foreground="White" BorderThickness="0" CornerRadius="4" Click="Next_Click">
+          <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="22" />
+        </Button>
+        <TextBlock x:Name="ViewerPosition" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0" Foreground="#9FFFFFFF" FontSize="10" />
+        <TextBlock x:Name="ViewerInfo" Visibility="Collapsed" />
+      </Grid>
+      <Border x:Name="ViewerInfoPanel" Visibility="Collapsed" Width="330" HorizontalAlignment="Right" Background="#F21A1B1F" BorderBrush="#30FFFFFF" BorderThickness="1,0,0,0" Padding="20">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock x:Name="DetailsTitleText" Text="Details" Foreground="White" FontSize="18" FontWeight="SemiBold" />
+            <Button Grid.Column="1" Style="{StaticResource ViewerButton}" Click="Info_Click">
+              <FontIcon Glyph="" FontFamily="Segoe Fluent Icons" FontSize="11" />
+            </Button>
+          </Grid>
+          <TextBlock x:Name="ViewerDetails" Foreground="#D0D2D7" TextWrapping="Wrap" LineHeight="22" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Row="1" Background="#151619" BorderBrush="#24FFFFFF" BorderThickness="0,1,0,0" Padding="7,4">
+          <ListView x:Name="FilmstripList" ItemsSource="{x:Bind ViewerFilmstripItems, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="FilmstripList_ItemClick" ContainerContentChanging="FilmstripList_ContainerContentChanging" PointerWheelChanged="FilmstripList_PointerWheelChanged" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.IsDeferredScrollingEnabled="False">
+            <ListView.ItemsPanel>
+              <ItemsPanelTemplate>
+                <ItemsStackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="Width" Value="70" />
+                <Setter Property="Height" Value="52" />
+                <Setter Property="Padding" Value="2" />
+                <Setter Property="Margin" Value="1,0" />
+                <Setter Property="CornerRadius" Value="0" />
+              </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+              <DataTemplate>
+                <Grid ToolTipService.ToolTip="{Binding Name}">
+                  <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Spacing="4" Opacity="0.65">
+                    <TextBlock Visibility="{Binding BadgeVisibility}" Text="▶" Foreground="White" FontSize="8" />
+                    <TextBlock Visibility="{Binding HdrBadgeVisibility}" Text="◐" Foreground="White" FontSize="8" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListView.ItemTemplate>
+          </ListView>
+      </Border>
+    </Grid>
+    <Canvas x:Name="GalleryLiveOverlay" Grid.Row="1" IsHitTestVisible="False">
+      <controls:MediaPlayerElement x:Name="GalleryLivePlayer" AreTransportControlsEnabled="False" AutoPlay="False" Visibility="Collapsed" />
+    </Canvas>
+  </Grid>
+</Window>

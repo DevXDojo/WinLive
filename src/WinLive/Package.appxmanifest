@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap desktop rescap">
+  <Identity Name="WinLive" Publisher="CN=WinLive Development" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>WinLive</DisplayName>
+    <PublisherDisplayName>WinLive</PublisherDisplayName>
+    <Logo>Assets\icon.png</Logo>
+  </Properties>
+  <Resources><Resource Language="x-generate" /></Resources>
+  <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22621.0" MaxVersionTested="10.0.22631.0" /></Dependencies>
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="WinLive" Description="Local Live Photo viewer" BackgroundColor="transparent" Square150x150Logo="Assets\icon.png" Square44x44Logo="Assets\icon.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\icon-large.png" Square310x310Logo="Assets\icon.png" Square71x71Logo="Assets\icon.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+  <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
+</Package>

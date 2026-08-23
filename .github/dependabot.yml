@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # .NET dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      dotnet-dependencies:
+        patterns:
+          - "*"
+    labels:
+      - "🛠️dependencies"
+    commit-message:
+      prefix: "chore(dotnet-deps)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "🛠️dependencies"
+    commit-message:
+      prefix: "chore(actions-deps)"
