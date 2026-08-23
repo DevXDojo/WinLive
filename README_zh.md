@@ -12,7 +12,7 @@
 
 ## 🚀 快速开始
 
-从 [Releases](https://github.com/DevXDojo/WinLive/releases/latest) 页面下载适合您平台的最新安装包。
+[![下载链接](imgs/badge-cn.svg)](https://apps.microsoft.com/detail/9NXZW4PLMG80)
 
 ## 🛠️ 开发指南
 

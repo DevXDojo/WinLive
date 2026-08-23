@@ -12,7 +12,7 @@
 
 ## 🚀 Quick Start
 
-Download the latest installer for your platform from the [Releases](https://github.com/DevXDojo/WinLive/releases/latest) page.
+[![download link](imgs/badge-en.svg)](https://apps.microsoft.com/detail/9NXZW4PLMG80)
 
 ## 🛠️ Development
 
