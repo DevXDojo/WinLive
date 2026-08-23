@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap desktop rescap">
-  <Identity Name="WinLive" Publisher="CN=WinLive Development" Version="1.0.0.0" />
+  <Identity Name="ch3nyang.WinLive" Publisher="CN=F725CF53-23AB-4302-A3EA-BC2A4160A29B" Version="1.0.0.0" />
   <Properties>
     <DisplayName>WinLive</DisplayName>
-    <PublisherDisplayName>WinLive</PublisherDisplayName>
+    <PublisherDisplayName>DevXDojo</PublisherDisplayName>
     <Logo>Assets\icon.png</Logo>
   </Properties>
   <Resources><Resource Language="x-generate" /></Resources>
