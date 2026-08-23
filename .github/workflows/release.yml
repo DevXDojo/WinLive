@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate Store package version
         id: version
@@ -67,7 +67,7 @@ jobs:
           "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
 
       - name: Set up .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -135,7 +135,7 @@ jobs:
           "asset_path=$outputPath" >> $env:GITHUB_OUTPUT
 
       - name: Upload Store package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: WinLive-${{ steps.version.outputs.version }}-store-windows-x64
           path: artifacts/store-release/*
@@ -145,7 +145,7 @@ jobs:
 
       - name: Configure Microsoft Store CLI
         if: ${{ inputs.publish }}
-        uses: microsoft/microsoft-store-apppublisher@v1.1
+        uses: microsoft/microsoft-store-apppublisher@v1.4
 
       - name: Submit package to Microsoft Store
         if: ${{ inputs.publish }}
