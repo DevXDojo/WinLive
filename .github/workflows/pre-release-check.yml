@@ -1,22 +1,22 @@
-name: Pre-release Check
+name: Store Package Check
 
 on:
   pull_request:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pre-release-check-${{ github.ref }}
+  group: store-package-check-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-package:
-    name: Test and package Windows x64
+    name: Test and build unsigned Store MSIX
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -35,55 +35,31 @@ jobs:
       - name: Run tests
         run: dotnet test WinLive.sln --configuration Release -p:Platform=x64 --no-restore
 
-      - name: Create temporary signing certificate
-        id: certificate
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          $certificate = New-SelfSignedCertificate `
-            -Type Custom `
-            -Subject 'CN=WinLive Development' `
-            -FriendlyName 'WinLive CI development certificate' `
-            -CertStoreLocation 'Cert:\CurrentUser\My' `
-            -KeyAlgorithm RSA `
-            -KeyLength 2048 `
-            -HashAlgorithm SHA256 `
-            -KeyUsage DigitalSignature `
-            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3')
-
-          $passwordText = [Guid]::NewGuid().ToString('N')
-          $password = ConvertTo-SecureString $passwordText -AsPlainText -Force
-          $certificateDir = Join-Path $env:RUNNER_TEMP 'winlive-signing'
-          $pfxPath = Join-Path $certificateDir 'WinLive-Development.pfx'
-          $cerPath = Join-Path $certificateDir 'WinLive-Development.cer'
-          New-Item -ItemType Directory -Force -Path $certificateDir | Out-Null
-
-          Export-PfxCertificate -Cert $certificate -FilePath $pfxPath -Password $password | Out-Null
-          Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
-          Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\CurrentUser\TrustedPeople' | Out-Null
-
-          "pfx_path=$pfxPath" >> $env:GITHUB_OUTPUT
-          "cer_path=$cerPath" >> $env:GITHUB_OUTPUT
-          "thumbprint=$($certificate.Thumbprint)" >> $env:GITHUB_OUTPUT
-          "PFX_PASSWORD=$passwordText" >> $env:GITHUB_ENV
-          "::add-mask::$passwordText"
-
       - name: Set CI package identity
         shell: pwsh
+        env:
+          PACKAGE_IDENTITY_NAME: ${{ vars.WINDOWS_PACKAGE_IDENTITY_NAME }}
+          PACKAGE_PUBLISHER: ${{ vars.WINDOWS_PACKAGE_PUBLISHER }}
         run: |
           $ErrorActionPreference = 'Stop'
           $manifestPath = Join-Path $env:GITHUB_WORKSPACE 'src\WinLive\Package.appxmanifest'
           [xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
-          $manifest.Package.Identity.Publisher = 'CN=WinLive Development'
+
+          if (-not [string]::IsNullOrWhiteSpace($env:PACKAGE_IDENTITY_NAME)) {
+            $manifest.Package.Identity.Name = $env:PACKAGE_IDENTITY_NAME
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:PACKAGE_PUBLISHER)) {
+            $manifest.Package.Identity.Publisher = $env:PACKAGE_PUBLISHER
+          }
+
           $manifest.Package.Identity.Version = '0.0.0.0'
           $manifest.Save($manifestPath)
 
-      - name: Build MSIX package
+      - name: Build unsigned MSIX package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $packageDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\ci-msix\'
+          $packageDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\store-check-msix\'
 
           dotnet build 'src\WinLive\WinLive.csproj' `
             --configuration Release `
@@ -93,61 +69,31 @@ jobs:
             -p:AppxPackageSigningEnabled=false `
             "-p:AppxPackageDir=$packageDir"
 
-      - name: Sign and verify MSIX package
+      - name: Collect package artifact
         shell: pwsh
-        env:
-          PFX_PATH: ${{ steps.certificate.outputs.pfx_path }}
         run: |
           $ErrorActionPreference = 'Stop'
 
-          $msixFiles = @(Get-ChildItem 'artifacts\ci-msix' -Recurse -Filter '*.msix')
+          $msixFiles = @(Get-ChildItem 'artifacts\store-check-msix' -Recurse -Filter '*.msix')
           if ($msixFiles.Count -ne 1) {
             throw "Expected exactly one MSIX package, found $($msixFiles.Count)."
           }
 
-          $signTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" `
-            -Recurse -Filter 'signtool.exe' |
-            Where-Object FullName -Match '\\x64\\signtool\.exe$' |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1 -ExpandProperty FullName
-          if (-not $signTool) {
-            throw 'SignTool was not found on the Windows runner.'
-          }
-
-          & $signTool sign /fd SHA256 /f $env:PFX_PATH /p $env:PFX_PASSWORD $msixFiles[0].FullName
-          if ($LASTEXITCODE -ne 0) { throw 'MSIX signing failed.' }
-
-          & $signTool verify /pa /all $msixFiles[0].FullName
-          if ($LASTEXITCODE -ne 0) { throw 'MSIX signature verification failed.' }
-
-          $outputDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\pre-release-check'
+          $outputDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts\store-check'
           New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-          $outputPath = Join-Path $outputDir 'WinLive-ci-windows-x64.msix'
+          $outputPath = Join-Path $outputDir 'WinLive-store-check-windows-x64.msix'
           Copy-Item -LiteralPath $msixFiles[0].FullName -Destination $outputPath
-          Copy-Item -LiteralPath '${{ steps.certificate.outputs.cer_path }}' -Destination $outputDir
 
           $hash = (Get-FileHash -LiteralPath $outputPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash *WinLive-ci-windows-x64.msix" | Set-Content `
-            -LiteralPath (Join-Path $outputDir 'WinLive-ci-windows-x64.msix.sha256') `
+          "$hash *WinLive-store-check-windows-x64.msix" | Set-Content `
+            -LiteralPath (Join-Path $outputDir 'WinLive-store-check-windows-x64.msix.sha256') `
             -Encoding ascii
 
-      - name: Upload checked package
+      - name: Upload checked Store package
         uses: actions/upload-artifact@v4
         with:
-          name: WinLive-pre-release-check-${{ github.run_number }}
-          path: artifacts/pre-release-check/*
+          name: WinLive-store-package-check-${{ github.run_number }}
+          path: artifacts/store-check/*
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
-
-      - name: Remove temporary certificate
-        if: always() && steps.certificate.outcome == 'success'
-        shell: pwsh
-        env:
-          CERTIFICATE_THUMBPRINT: ${{ steps.certificate.outputs.thumbprint }}
-          PFX_PATH: ${{ steps.certificate.outputs.pfx_path }}
-        run: |
-          Remove-Item "Cert:\CurrentUser\My\$env:CERTIFICATE_THUMBPRINT" -Force -ErrorAction SilentlyContinue
-          Remove-Item "Cert:\CurrentUser\TrustedPeople\$env:CERTIFICATE_THUMBPRINT" -Force -ErrorAction SilentlyContinue
-          Remove-Item -LiteralPath $env:PFX_PATH -Force -ErrorAction SilentlyContinue
-
